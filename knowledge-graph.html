@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Intelli-Credit ARK — Knowledge Graph</title>
+  <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e1e4e8; }
+
+    header {
+      padding: 16px 24px;
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    header .logo {
+      width: 32px; height: 32px;
+      background: #1f6feb;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 18px; color: #fff;
+    }
+    header h1 { font-size: 18px; font-weight: 600; }
+    header span { font-size: 12px; color: #8b949e; background: #21262d; padding: 3px 10px; border-radius: 20px; }
+
+    .layout { display: flex; height: calc(100vh - 57px); }
+
+    #graph { flex: 1; }
+
+    .sidebar {
+      width: 300px;
+      background: #161b22;
+      border-left: 1px solid #30363d;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .legend {
+      padding: 16px;
+      border-bottom: 1px solid #30363d;
+    }
+    .legend h2 { font-size: 13px; font-weight: 600; color: #8b949e; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 12px; }
+    .legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 8px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+
+    .info-panel {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+    }
+    .info-panel h2 { font-size: 13px; font-weight: 600; color: #8b949e; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 12px; }
+    .info-panel .placeholder { color: #484f58; font-size: 13px; }
+
+    #node-detail { display: none; }
+    #node-detail .node-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    #node-detail .node-type { font-size: 11px; color: #8b949e; background: #21262d; display: inline-block; padding: 2px 8px; border-radius: 20px; margin-bottom: 12px; }
+    #node-detail .node-desc { font-size: 13px; color: #c9d1d9; line-height: 1.6; margin-bottom: 14px; }
+    #node-detail .node-path { font-size: 11px; color: #58a6ff; background: #161b22; border: 1px solid #30363d; padding: 4px 8px; border-radius: 4px; font-family: monospace; word-break: break-all; }
+    #node-detail .section-title { font-size: 11px; font-weight: 600; color: #8b949e; text-transform: uppercase; margin: 14px 0 6px; }
+    #node-detail .tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    #node-detail .tag { font-size: 11px; background: #21262d; border: 1px solid #30363d; padding: 2px 8px; border-radius: 4px; color: #c9d1d9; }
+
+    .edge-legend { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #8b949e; margin-bottom: 6px; }
+    .edge-line { width: 28px; height: 2px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">A</div>
+  <h1>Intelli-Credit ARK</h1>
+  <span>Knowledge Graph</span>
+</header>
+
+<div class="layout">
+  <div id="graph"></div>
+
+  <div class="sidebar">
+    <div class="legend">
+      <h2>Node Types</h2>
+      <div class="legend-item"><div class="dot" style="background:#1f6feb"></div> FastAPI Endpoint</div>
+      <div class="legend-item"><div class="dot" style="background:#388bfd"></div> LangGraph Agent</div>
+      <div class="legend-item"><div class="dot" style="background:#3fb950"></div> Database</div>
+      <div class="legend-item"><div class="dot" style="background:#a371f7"></div> Data Model / Schema</div>
+      <div class="legend-item"><div class="dot" style="background:#f78166"></div> External Service</div>
+      <div class="legend-item"><div class="dot" style="background:#e3b341"></div> Frontend Component</div>
+      <div class="legend-item"><div class="dot" style="background:#79c0ff"></div> Utility</div>
+
+      <h2 style="margin-top:14px">Edge Types</h2>
+      <div class="edge-legend"><div class="edge-line" style="background:#58a6ff"></div> imports / uses</div>
+      <div class="edge-legend"><div class="edge-line" style="background:#3fb950;border-top:2px dashed #3fb950;height:0"></div> data flow (conditional)</div>
+      <div class="edge-legend"><div class="edge-line" style="background:#e3b341"></div> HTTP call</div>
+      <div class="edge-legend"><div class="edge-line" style="background:#79c0ff;border-top:2px dashed #79c0ff;height:0"></div> SSE emit</div>
+      <div class="edge-legend"><div class="edge-line" style="background:#a371f7"></div> state read/write</div>
+    </div>
+
+    <div class="info-panel">
+      <h2>Node Details</h2>
+      <p class="placeholder" id="placeholder-text">Click any node to see details.</p>
+      <div id="node-detail">
+        <div class="node-title" id="nd-title"></div>
+        <div class="node-type" id="nd-type"></div>
+        <div class="node-desc" id="nd-desc"></div>
+        <div class="node-path" id="nd-path"></div>
+        <div class="section-title">Key Responsibilities</div>
+        <div class="tag-list" id="nd-tags"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const NODE_META = {
+  "main.py": {
+    type: "FastAPI App",
+    desc: "Entry point. Exposes /api/onboard (entity registration), /api/upload-documents (AI pipeline trigger), /api/companies (list all entities), and /api/status/{session_id} (SSE real-time agent stream). Orchestrates the full document processing flow.",
+    path: "backend/main.py",
+    tags: ["CORS middleware", "POST /api/onboard", "POST /api/upload-documents", "GET /api/companies", "GET /api/status/{session_id} SSE", "Invokes ark_pipeline"]
+  },
+  "supervisor.py": {
+    type: "LangGraph Workflow",
+    desc: "Defines the StateGraph (ark_pipeline). Routes documents: classifier → extractor (conditional, if financials detected) → researcher → synthesizer → END. Implements conditional routing via route_document().",
+    path: "backend/agents/supervisor.py",
+    tags: ["StateGraph", "route_document()", "conditional edges", "ark_pipeline.compile()", "4-agent pipeline"]
+  },
+  "state.py": {
+    type: "Shared State",
+    desc: "Defines GraphState TypedDict — the shared clipboard passed between all LangGraph agents. Contains session_id, company_name, raw text, categories, financials, news, swot_analysis, final_recommendation, and next_agent.",
+    path: "backend/agents/state.py",
+    tags: ["session_id", "company_name", "file_paths", "raw_document_text", "document_categories", "extracted_financials", "external_news", "swot_analysis", "final_recommendation"]
+  },
+  "classifier.py": {
+    type: "LangGraph Agent",
+    desc: "Agent 1. Reads raw document text from state, uses Qwen 2.5 (via Ollama) with structured output to classify documents into: ALM, Shareholding, Annual Report, Bank Statement, or Unknown. Emits SSE progress events.",
+    path: "backend/agents/classifier.py",
+    tags: ["categorize_documents()", "ClassificationResult (Pydantic)", "ChatOllama qwen2.5:latest", "structured output", "emit() SSE"]
+  },
+  "extractor.py": {
+    type: "LangGraph Agent",
+    desc: "Agent 2 (RAG). Queries ChromaDB for top-5 relevant chunks, feeds them to Qwen 2.5 (via Ollama), extracts: total_revenue, net_profit, total_debt, cash_and_equivalents. Emits SSE progress events.",
+    path: "backend/agents/extractor.py",
+    tags: ["extract_financials()", "FinancialMetrics (Pydantic)", "similarity_search k=5", "ChatOllama qwen2.5:latest", "RAG pattern", "emit() SSE"]
+  },
+  "researcher.py": {
+    type: "LangGraph Agent",
+    desc: "Agent 3. Identifies company name via Qwen 2.5 (Ollama), searches live web via DuckDuckGo (ddgs.text, max_results=3), synthesizes a 3–4 sentence market sentiment summary. Emits SSE progress events.",
+    path: "backend/agents/researcher.py",
+    tags: ["research_company()", "DDGS web search", "ChatOllama qwen2.5:latest", "company name extraction", "sentiment summary", "emit() SSE"]
+  },
+  "synthesizer.py": {
+    type: "LangGraph Agent",
+    desc: "Agent 4. Final step. Takes company name, extracted financials, and market sentiment from state. Uses Qwen 2.5 (Ollama) to write a professional Credit Memo with SWOT analysis and a definitive APPROVE or REJECT recommendation.",
+    path: "backend/agents/synthesizer.py",
+    tags: ["synthesize_report()", "ChatOllama qwen2.5:latest", "Credit Memo", "SWOT analysis", "APPROVE / REJECT verdict", "emit() SSE"]
+  },
+  "progress.py": {
+    type: "Utility",
+    desc: "In-memory, thread-safe SSE event bus. All agents call emit() to push status updates keyed by session_id. main.py streams these via /api/status/{session_id}. Provides init_session(), emit(), mark_done(), get_events(), cleanup().",
+    path: "backend/progress.py",
+    tags: ["init_session()", "emit()", "mark_done()", "get_events()", "cleanup()", "threading.Lock", "SSE event store"]
+  },
+  "sqlite_db.py": {
+    type: "Database Layer",
+    desc: "SQLAlchemy ORM wrapping SQLite. Defines CompanyEntity table (companies) with fields: id, company_name, cin (unique), pan (unique), sector, loan_type, loan_amount, loan_tenure_months. Provides init_db() and get_db() FastAPI dependency.",
+    path: "backend/database/sqlite_db.py",
+    tags: ["CompanyEntity", "SQLite", "SessionLocal", "init_db()", "get_db()"]
+  },
+  "vector_db.py": {
+    type: "Database Layer",
+    desc: "ChromaDB vector store using BAAI/bge-large-en-v1.5 (1024-dim) HuggingFace embeddings. Provides chunk_and_store_text() (splits at chunk_size=1000, overlap=200) and get_vector_store().",
+    path: "backend/database/vector_db.py",
+    tags: ["Chroma", "HuggingFaceEmbeddings", "BAAI/bge-large-en-v1.5", "chunk_size=1000", "chunk_overlap=200", "collection: financial_documents"]
+  },
+  "schemas.py": {
+    type: "Data Model",
+    desc: "Pydantic schemas: EntityOnboardingCreate (request body for /api/onboard with company_name, cin, pan, sector, loan_type, loan_amount, loan_tenure_months) and EntityResponse (same + id). Used for FastAPI validation and serialization.",
+    path: "backend/models/schemas.py",
+    tags: ["EntityOnboardingCreate", "EntityResponse", "company_name", "cin", "pan", "sector", "loan_type", "loan_amount", "loan_tenure_months"]
+  },
+  "document_parser.py": {
+    type: "Utility",
+    desc: "Extracts raw text from uploaded PDF files using PyPDFLoader. Reads only the first 10 pages per file to avoid overloading the LLM context window. Called in main.py before chunking.",
+    path: "backend/utils/document_parser.py",
+    tags: ["extract_text_from_pdfs()", "PyPDFLoader", "max_pages=10", "PDF → raw text"]
+  },
+  "App.jsx": {
+    type: "Frontend Component",
+    desc: "React root component. Renders BankScene — the animated bank lobby game UI that serves as the main application shell.",
+    path: "frontend/src/App.jsx",
+    tags: ["React root", "renders BankScene"]
+  },
+  "BankScene.jsx": {
+    type: "Frontend Component",
+    desc: "Main animated bank lobby UI. Player moves through the scene and interacts with a desk to trigger the credit analysis workflow. Contains SSE event listener for real-time agent progress, file upload logic, and PDF credit memo download.",
+    path: "frontend/src/components/BankScene.jsx",
+    tags: ["animated bank scene", "player movement", "SSE /api/status", "file upload", "jsPDF credit memo", "markdown formatter", "Approve/Reject display"]
+  },
+  "DocumentUpload.jsx": {
+    type: "Frontend Component",
+    desc: "Standalone document upload component (currently not used in main app flow — BankScene handles upload). File picker (PDF only), calls POST /api/upload-documents, displays classification, extracted financials, market sentiment, and credit memo with PDF download.",
+    path: "frontend/src/components/DocumentUpload.jsx",
+    tags: ["PDF upload", "FormData", "aiResults state", "financial display", "jsPDF credit memo", "not mounted in App.jsx"]
+  },
+  "Ollama / Qwen 2.5": {
+    type: "External Service",
+    desc: "Local LLM runtime (Ollama) serving the qwen2.5:latest model. Used by all four agents for document classification (structured output, temp=0), financial extraction (structured output, temp=0), company name detection (temp=0.3), sentiment synthesis (temp=0.3), and final credit memo generation (temp=0.1). No API key — runs on-device.",
+    path: "External: Ollama (localhost:11434) — model: qwen2.5:latest",
+    tags: ["qwen2.5:latest", "ChatOllama", "structured output", "temperature=0 / 0.1 / 0.3", "local inference", "langchain-ollama"]
+  },
+  "DuckDuckGo": {
+    type: "External Service",
+    desc: "Live web search used by the Researcher agent via duckduckgo_search (DDGS). Fetches top-3 news results about the identified company for market sentiment analysis.",
+    path: "External: duckduckgo-search library",
+    tags: ["DDGS.text()", "max_results=3", "live news", "no API key required"]
+  },
+  "HuggingFace Embeddings": {
+    type: "External Service",
+    desc: "Local CPU-based sentence embeddings (BAAI/bge-large-en-v1.5, 1024 dimensions) via langchain-huggingface. Runs locally — no API key needed. Used to embed document chunks stored in ChromaDB.",
+    path: "External: HuggingFace Hub (local inference)",
+    tags: ["BAAI/bge-large-en-v1.5", "1024-dim", "local CPU", "langchain-huggingface"]
+  },
+  "SQLite DB": {
+    type: "Database",
+    desc: "Persistent storage for onboarded company entities. File at backend/data/ark_database.db. Stores company_name, cin (unique), pan (unique), sector, loan_type, loan_amount, loan_tenure_months.",
+    path: "backend/data/ark_database.db",
+    tags: ["companies table", "cin unique", "pan unique", "loan_amount float", "loan_tenure_months int"]
+  },
+  "ChromaDB": {
+    type: "Database",
+    desc: "Persistent vector store for document chunks. Stored at backend/data/chroma_db. Collection: financial_documents. Queried by extractor.py via similarity_search (k=5).",
+    path: "backend/data/chroma_db/",
+    tags: ["financial_documents collection", "similarity_search k=5", "persistent directory", "1024-dim vectors"]
+  }
+};
+
+const nodes = new vis.DataSet([
+  // Backend core
+  { id: "main.py",            label: "main.py",            group: "api",      x: 0,    y: 0    },
+  { id: "supervisor.py",      label: "supervisor.py",      group: "agent",    x: 260,  y: 0    },
+  { id: "state.py",           label: "state.py",           group: "model",    x: 260,  y: -180 },
+  { id: "classifier.py",      label: "classifier.py",      group: "agent",    x: 520,  y: -150 },
+  { id: "extractor.py",       label: "extractor.py",       group: "agent",    x: 520,  y: -50  },
+  { id: "researcher.py",      label: "researcher.py",      group: "agent",    x: 520,  y: 50   },
+  { id: "synthesizer.py",     label: "synthesizer.py",     group: "agent",    x: 520,  y: 150  },
+
+  // Utility
+  { id: "progress.py",        label: "progress.py",        group: "util",     x: 130,  y: -280 },
+
+  // Database layer
+  { id: "sqlite_db.py",       label: "sqlite_db.py",       group: "db",       x: -200, y: 120  },
+  { id: "vector_db.py",       label: "vector_db.py",       group: "db",       x: 200,  y: 220  },
+
+  // Models & utils
+  { id: "schemas.py",         label: "schemas.py",         group: "model",    x: -200, y: -120 },
+  { id: "document_parser.py", label: "document_parser.py", group: "util",     x: -100, y: 220  },
+
+  // Frontend
+  { id: "App.jsx",            label: "App.jsx",            group: "frontend", x: -460, y: -60  },
+  { id: "BankScene.jsx",      label: "BankScene.jsx",      group: "frontend", x: -460, y: 60   },
+  { id: "DocumentUpload.jsx", label: "DocumentUpload.jsx", group: "frontend", x: -460, y: 180  },
+
+  // External
+  { id: "Ollama / Qwen 2.5",  label: "Ollama /\nQwen 2.5",  group: "ext",    x: 780,  y: 0    },
+  { id: "DuckDuckGo",         label: "DuckDuckGo",           group: "ext",    x: 780,  y: 160  },
+  { id: "HuggingFace Embeddings", label: "HuggingFace\nEmbeddings", group: "ext", x: 480, y: 320 },
+
+  // Data stores
+  { id: "SQLite DB",          label: "SQLite DB",          group: "db",       x: -200, y: 300  },
+  { id: "ChromaDB",           label: "ChromaDB",           group: "db",       x: 200,  y: 390  },
+]);
+
+const edges = new vis.DataSet([
+  // Frontend → Backend
+  { from: "App.jsx",            to: "BankScene.jsx",      color: { color: "#e3b341" }, label: "renders",           arrows: "to" },
+  { from: "BankScene.jsx",      to: "main.py",            color: { color: "#e3b341" }, label: "HTTP POST",         arrows: "to" },
+  { from: "BankScene.jsx",      to: "main.py",            color: { color: "#e3b341" }, label: "SSE /api/status",   arrows: "to", dashes: true },
+
+  // main.py → Backend modules
+  { from: "main.py", to: "supervisor.py",      color: { color: "#58a6ff" }, label: "invokes", arrows: "to" },
+  { from: "main.py", to: "sqlite_db.py",       color: { color: "#58a6ff" }, arrows: "to" },
+  { from: "main.py", to: "schemas.py",         color: { color: "#58a6ff" }, arrows: "to" },
+  { from: "main.py", to: "document_parser.py", color: { color: "#58a6ff" }, arrows: "to" },
+  { from: "main.py", to: "vector_db.py",       color: { color: "#58a6ff" }, arrows: "to" },
+  { from: "main.py", to: "state.py",           color: { color: "#58a6ff" }, arrows: "to" },
+  { from: "main.py", to: "progress.py",        color: { color: "#58a6ff" }, arrows: "to" },
+
+  // supervisor → agents & state
+  { from: "supervisor.py", to: "state.py",       color: { color: "#58a6ff" }, arrows: "to" },
+  { from: "supervisor.py", to: "classifier.py",  color: { color: "#3fb950" }, label: "1st",              arrows: "to" },
+  { from: "supervisor.py", to: "extractor.py",   color: { color: "#3fb950" }, label: "2nd (conditional)", arrows: "to", dashes: true },
+  { from: "supervisor.py", to: "researcher.py",  color: { color: "#3fb950" }, label: "3rd",              arrows: "to" },
+  { from: "supervisor.py", to: "synthesizer.py", color: { color: "#3fb950" }, label: "4th",              arrows: "to" },
+
+  // agents → state (read & write)
+  { from: "classifier.py",  to: "state.py", color: { color: "#a371f7" }, arrows: "to,from" },
+  { from: "extractor.py",   to: "state.py", color: { color: "#a371f7" }, arrows: "to,from" },
+  { from: "researcher.py",  to: "state.py", color: { color: "#a371f7" }, arrows: "to,from" },
+  { from: "synthesizer.py", to: "state.py", color: { color: "#a371f7" }, arrows: "to,from" },
+
+  // agents → progress (SSE emit)
+  { from: "classifier.py",  to: "progress.py", color: { color: "#79c0ff" }, label: "emit()", arrows: "to", dashes: true },
+  { from: "extractor.py",   to: "progress.py", color: { color: "#79c0ff" }, arrows: "to", dashes: true },
+  { from: "researcher.py",  to: "progress.py", color: { color: "#79c0ff" }, arrows: "to", dashes: true },
+  { from: "synthesizer.py", to: "progress.py", color: { color: "#79c0ff" }, arrows: "to", dashes: true },
+
+  // extractor → vector_db
+  { from: "extractor.py", to: "vector_db.py", color: { color: "#58a6ff" }, label: "RAG query", arrows: "to" },
+
+  // db → data stores
+  { from: "sqlite_db.py", to: "SQLite DB",             color: { color: "#3fb950" }, arrows: "to" },
+  { from: "vector_db.py", to: "ChromaDB",              color: { color: "#3fb950" }, arrows: "to" },
+  { from: "vector_db.py", to: "HuggingFace Embeddings", color: { color: "#58a6ff" }, arrows: "to" },
+
+  // agents → Ollama/Qwen
+  { from: "classifier.py",  to: "Ollama / Qwen 2.5", color: { color: "#f78166" }, arrows: "to" },
+  { from: "extractor.py",   to: "Ollama / Qwen 2.5", color: { color: "#f78166" }, arrows: "to" },
+  { from: "researcher.py",  to: "Ollama / Qwen 2.5", color: { color: "#f78166" }, arrows: "to" },
+  { from: "synthesizer.py", to: "Ollama / Qwen 2.5", color: { color: "#f78166" }, arrows: "to" },
+  { from: "researcher.py",  to: "DuckDuckGo",         color: { color: "#f78166" }, label: "live search", arrows: "to" },
+]);
+
+const GROUP_COLORS = {
+  api:      { background: "#1f6feb", border: "#388bfd" },
+  agent:    { background: "#1a4080", border: "#388bfd" },
+  db:       { background: "#196127", border: "#3fb950" },
+  model:    { background: "#3d1f7a", border: "#a371f7" },
+  ext:      { background: "#6e2a20", border: "#f78166" },
+  frontend: { background: "#5c4a00", border: "#e3b341" },
+  util:     { background: "#1c4e6e", border: "#79c0ff" },
+};
+
+const options = {
+  nodes: {
+    shape: "box",
+    borderWidth: 1.5,
+    borderWidthSelected: 3,
+    font: { color: "#e1e4e8", size: 13, face: "Segoe UI, sans-serif" },
+    margin: { top: 8, bottom: 8, left: 12, right: 12 },
+    shadow: { enabled: true, color: "rgba(0,0,0,0.5)", size: 6, x: 2, y: 2 },
+    chosen: { node: (values) => { values.borderWidth = 3; values.shadowSize = 12; } }
+  },
+  edges: {
+    smooth: { type: "cubicBezier", forceDirection: "horizontal", roundness: 0.4 },
+    font: { color: "#8b949e", size: 10, face: "Segoe UI", align: "middle" },
+    width: 1.5,
+    selectionWidth: 2.5,
+    arrows: { to: { scaleFactor: 0.6 } }
+  },
+  groups: Object.fromEntries(
+    Object.entries(GROUP_COLORS).map(([k, v]) => [k, { color: v }])
+  ),
+  physics: { enabled: false },
+  interaction: {
+    hover: true,
+    tooltipDelay: 200,
+    zoomView: true,
+    dragView: true,
+  },
+  layout: { improvedLayout: false }
+};
+
+const container = document.getElementById("graph");
+const network = new vis.Network(container, { nodes, edges }, options);
+
+network.on("click", function(params) {
+  if (params.nodes.length > 0) {
+    const id = params.nodes[0];
+    const meta = NODE_META[id];
+    document.getElementById("placeholder-text").style.display = "none";
+    const detail = document.getElementById("node-detail");
+    detail.style.display = "block";
+    document.getElementById("nd-title").textContent = id;
+    document.getElementById("nd-type").textContent = meta ? meta.type : "—";
+    document.getElementById("nd-desc").textContent = meta ? meta.desc : "";
+    document.getElementById("nd-path").textContent = meta ? meta.path : "";
+    const tagList = document.getElementById("nd-tags");
+    tagList.innerHTML = "";
+    if (meta && meta.tags) {
+      meta.tags.forEach(t => {
+        const span = document.createElement("span");
+        span.className = "tag";
+        span.textContent = t;
+        tagList.appendChild(span);
+      });
+    }
+  } else {
+    document.getElementById("placeholder-text").style.display = "";
+    document.getElementById("node-detail").style.display = "none";
+  }
+});
+
+network.fit({ animation: { duration: 600, easingFunction: "easeInOutQuad" } });
+</script>
+</body>
+</html>

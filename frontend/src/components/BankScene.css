@@ -1,0 +1,244 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+* { box-sizing: border-box; }
+
+.bank-root {
+  width: 100%;
+  min-height: 100vh;
+  background: #0d0d1a;
+  font-family: 'Press Start 2P', monospace;
+  color: #eee;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.bank-header {
+  background: #07071a;
+  border-bottom: 3px solid #f39c12;
+  padding: 14px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #f39c12;
+  letter-spacing: 2px;
+}
+.header-sub { font-size: 7px; color: #666; letter-spacing: 1px; }
+
+/* ── The Full-Screen Game Wrapper ── */
+.game-wrapper {
+  width: 100%; 
+  flex-grow: 1; 
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  border-bottom: 4px solid #2a2a2a;
+}
+
+.bank-room {
+  position: relative;
+  width: 100%;
+  flex-grow: 1; 
+  background-color: #b5977a; 
+  background-image: url('/sprites/floor_tile.png'); 
+  background-repeat: repeat;
+  background-size: 64px 64px; 
+  overflow: hidden;
+  box-shadow: inset 0 10px 40px rgba(0,0,0,0.6);
+}
+
+.player-character {
+  position: absolute;
+  width: 120px;  
+  height: 180px; 
+  background: transparent; 
+  background-size: contain;
+  background-position: center bottom; 
+  background-repeat: no-repeat;
+  z-index: 10;
+}
+
+.front-desk-container {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 5;
+}
+.front-desk-img {
+  width: 110px; 
+  z-index: 2;
+}
+.front-desk-label {
+  font-size: 9px;
+  color: #fff;
+  text-shadow: 1px 1px 0 #000;
+  margin-top: 10px; 
+}
+
+.interaction-prompt {
+  position: absolute;
+  top: -35px;
+  background: #fff;
+  color: #000;
+  padding: 8px 10px;
+  border-radius: 4px;
+  border: 2px solid #000;
+  font-size: 8px;
+  white-space: nowrap;
+  animation: bounce 0.8s infinite alternate;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+}
+.interaction-prompt::after {
+  content: '';
+  position: absolute;
+  bottom: -6px; left: 50%;
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #000;
+}
+
+@keyframes bounce {
+  from { transform: translateY(0); }
+  to { transform: translateY(-6px); }
+}
+
+.ai-desks-container {
+  position: absolute;
+  bottom: 40px;
+  width: 100%; 
+  display: flex;
+  justify-content: space-evenly; 
+  z-index: 1;
+}
+
+.static-agent-wrapper {
+  position: relative;
+  width: 120px;
+  height: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.agent-sprite {
+  position: absolute;
+  bottom: 55px; 
+  width: 60px;  
+  z-index: 1;   
+}
+
+.desk-sprite {
+  position: absolute;
+  bottom: 15px; 
+  width: 110px; 
+  z-index: 2;   
+}
+
+.agent-label {
+  position: absolute;
+  bottom: -5px; 
+  font-size: 8px;
+  color: #fff;
+  text-shadow: 1px 1px 0 #000;
+  z-index: 3;
+}
+
+.agent-bubble {
+  position: absolute;
+  top: -85px; 
+  background: #fff;
+  color: #000;
+  padding: 8px 10px;
+  border-radius: 4px;
+  border: 2px solid #000;
+  font-size: 7px;
+  white-space: nowrap;
+  animation: bounce 0.8s infinite alternate;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+  z-index: 10;
+}
+
+.agent-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -6px; left: 50%;
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #000;
+}
+
+.agent-bubble.working { color: #f39c12; }
+.agent-bubble.done { color: #27ae60; }
+
+.belt {
+  width: 100%; 
+  height: 86px; 
+  background: #181818;
+  background-image: url('/sprites/conveyer-belt.png');
+  background-repeat: repeat-x;
+  background-size: auto 100%; 
+  border-bottom: 4px solid #2a2a2a;
+  position: relative;
+  overflow: hidden;
+}
+.belt-stripes {
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(90deg, transparent, transparent 18px, rgba(255,255,255,0.04) 18px, rgba(255,255,255,0.04) 20px);
+  animation: beltScroll 0.9s linear infinite;
+}
+.belt-document {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%); 
+  font-size: 22px;
+  filter: drop-shadow(0 0 9px #f39c12);
+  transition: left 0.85s cubic-bezier(0.45, 0.05, 0.55, 0.95), opacity 0.4s;
+}
+@keyframes beltScroll {
+  from { background-position: 0 0; }
+  to { background-position: 20px 0; }
+}
+
+/* ── UI RESULTS FORMATTING (UPDATED) ──────────────────────────────────────────── */
+.bottom-panel { background: #0d0d1a; padding: 40px; border-top: 2px solid #1c1c3a; }
+.results-box { max-width: 900px; margin: 0 auto; }
+.results-topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+.results-complete { font-size: 12px; color: #2ecc71; letter-spacing: 1px; }
+
+.btn-download { 
+  background: #1e3a8a; color: #fff; border: 2px solid #3b5fc0; 
+  padding: 12px 20px; font-family: 'Press Start 2P', monospace; 
+  font-size: 8px; cursor: pointer; transition: 0.2s;
+}
+.btn-download:hover { background: #3b5fc0; }
+
+.verdict-card { padding: 25px; margin-bottom: 30px; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+.verdict-card.approve { background: #061810; border-left: 6px solid #27ae60; }
+.verdict-card.reject  { background: #180606; border-left: 6px solid #e74c3c; }
+
+.verdict-badge { font-size: 12px; margin-bottom: 20px; letter-spacing: 1px; }
+.verdict-card.approve .verdict-badge { color: #2ecc71; }
+.verdict-card.reject  .verdict-badge { color: #e74c3c; }
+
+/* The Text Format Upgrade */
+.verdict-memo { 
+  font-size: 13px; 
+  line-height: 1.8; 
+  color: #ccc; 
+  white-space: pre-wrap; 
+  margin: 0; 
+  font-family: 'Courier New', Courier, monospace; 
+  background: rgba(0,0,0,0.25);
+  padding: 20px;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.fin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.fin-card { background: #12122a; border: 1px solid #22224a; padding: 18px; border-radius: 4px; }
+.fin-label { font-size: 8px; color: #8892b0; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+.fin-value { font-size: 14px; color: #f39c12; font-family: 'Courier New', monospace; font-weight: bold; }
