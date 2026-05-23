@@ -32,23 +32,23 @@ The system follows a structured "Assembly Line" workflow:
 ## 📸 Screenshots
 
 #### 1. Interactive Multi-Agent Environment
-![System Environment](screenshots/s1.png)
+![System Environment](Screenshots/s1.png)
 *The system environment with 4 agents performing different tasks and the reception for submitting the file to be evaluated.*
 
 #### 2. Real-Time Agent Communication
-![Agent Status](screenshots/s2.png)
+![Agent Status](Screenshots/s2.png)
 *Each agent notifies the user based on their current operation and status of the task.*
 
 #### 3. Automated Risk Assessment
-![SWOT Analysis](screenshots/s3.png)
+![SWOT Analysis](Screenshots/s3.png)
 *A SWOT analysis is provided based on the organization documents whether to approve or deny the request.*
 
 #### 4. Instant Report Generation
-![PDF Download](screenshots/s4.png)
+![PDF Download](Screenshots/s4.png)
 *A downloadable pdf regarding the evaluation is provided which can be downloaded by the user.*
 
 #### 5. Comprehensive Credit Memo
-![PDF Content](screenshots/s5.png)
+![PDF Content](Screenshots/s5.png)
 *Stating the reasons for evaluation in the pdf.*
 
 ---
